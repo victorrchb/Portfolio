@@ -26,14 +26,14 @@
   // Hotspot (x y) en pixels pour les .cur (0,0 par défaut). Ajustable si besoin.
 const HS = { x: 0, y: 0 }
 
-const map: Record<CursorState, string> = {
-    default: `url(${asset('Pointer.cur')}) ${HS.x} ${HS.y}, auto`,
-    pointer: `url(${asset('Link.cur')}) ${HS.x} ${HS.y}, pointer`,
-    text: `url(${asset('Text.cur')}) ${HS.x} ${HS.y}, text`,
-    help: `url(${asset('Help.cur')}) ${HS.x} ${HS.y}, help`,
+  const map: Record<CursorState, string> = {
+    'default': `url(${asset('Pointer.cur')}) ${HS.x} ${HS.y}, auto`,
+    'pointer': `url(${asset('Link.cur')}) ${HS.x} ${HS.y}, pointer`,
+    'text': `url(${asset('Text.cur')}) ${HS.x} ${HS.y}, text`,
+    'help': `url(${asset('Help.cur')}) ${HS.x} ${HS.y}, help`,
     'not-allowed': `url(${asset('Unavailable.cur')}) ${HS.x} ${HS.y}, not-allowed`,
-    move: `url(${asset('Move.cur')}) ${HS.x} ${HS.y}, move`,
-    precision: `url(${asset('Precision.cur')}) ${HS.x} ${HS.y}, crosshair`,
+    'move': `url(${asset('Move.cur')}) ${HS.x} ${HS.y}, move`,
+    'precision': `url(${asset('Precision.cur')}) ${HS.x} ${HS.y}, crosshair`,
     'ew-resize': `url(${asset('horz.cur')}) ${HS.x} ${HS.y}, ew-resize`,
     'ns-resize': `url(${asset('Vert.cur')}) ${HS.x} ${HS.y}, ns-resize`,
     'nwse-resize': `url(${asset('Dgn1.cur')}) ${HS.x} ${HS.y}, nwse-resize`,
@@ -78,6 +78,11 @@ function inferCursorFromTarget(target: Element): CursorState {
 function handlePointerOver(e: PointerEvent) {
   const t = e.target as Element | null
   if (!t) return
+  const tag = t.tagName.toLowerCase()
+  if (tag === 'img' || tag === 'figure') {
+    // Ne change pas le curseur sur les images pour éviter move/drag
+    return
+  }
   setCursor(inferCursorFromTarget(t))
 }
 

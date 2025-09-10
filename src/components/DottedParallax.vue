@@ -17,8 +17,8 @@
     {
       gap: 24,
       dotSize: 2,
-      color: 'rgba(255,255,255,0.12)',
-      background: '#0b0d10',
+      color: '',
+      background: '',
       radius: 180,
       strength: 28,
     },
@@ -29,29 +29,48 @@
   let rafId = 0
   let mouseX = window.innerWidth / 2
   let mouseY = window.innerHeight / 2
+  let dpr = Math.max(1, window.devicePixelRatio || 1)
+  let ro: ResizeObserver | null = null
 
   function onPointerMove (e: MouseEvent) {
-    mouseX = e.clientX
-    mouseY = e.clientY
+    // Position absolue sur la page (et pas uniquement dans le viewport)
+    mouseX = e.clientX + window.scrollX
+    mouseY = e.clientY + window.scrollY
   }
 
   function resizeCanvas () {
     const c = canvasEl.value
     if (!c) return
-    const dpr = Math.max(1, window.devicePixelRatio || 1)
-    c.width = Math.floor(window.innerWidth * dpr)
-    c.height = Math.floor(window.innerHeight * dpr)
-    c.style.width = `${window.innerWidth}px`
-    c.style.height = `${window.innerHeight}px`
+    dpr = Math.max(1, window.devicePixelRatio || 1)
+    const doc = document.documentElement
+    const w = Math.max(window.innerWidth, doc.scrollWidth)
+    const h = Math.max(window.innerHeight, doc.scrollHeight)
+    c.width = Math.floor(w * dpr)
+    c.height = Math.floor(h * dpr)
+    c.style.width = `${w}px`
+    c.style.height = `${h}px`
     ctx = c.getContext('2d')
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
 
+  function resolveCanvasColors () {
+    // Read from CSS variables to sync with theme; fallback to props if provided
+    const cs = getComputedStyle(document.documentElement)
+    const bgVar = cs.getPropertyValue('--bg-canvas').trim()
+    const dotVar = cs.getPropertyValue('--dot-canvas').trim()
+    const background = props.background || bgVar || '#0b0d10'
+    const color = props.color || dotVar || 'rgba(255,255,255,0.12)'
+    return { background, color }
+  }
+
   function draw () {
     if (!ctx) return
-    const { gap, dotSize, color, background, radius, strength } = props
-    const w = window.innerWidth
-    const h = window.innerHeight
+    const { gap, dotSize, radius, strength } = props
+    const { background, color } = resolveCanvasColors()
+    const c = canvasEl.value
+    if (!c) return
+    const w = c.width / dpr
+    const h = c.height / dpr
     ctx.clearRect(0, 0, w, h)
     ctx.fillStyle = background
     ctx.fillRect(0, 0, w, h)
@@ -88,24 +107,29 @@
     resizeCanvas()
     window.addEventListener('resize', resizeCanvas)
     window.addEventListener('mousemove', onPointerMove, { passive: true })
+    // Observe content size changes to keep the background covering the full page
+    ro = new ResizeObserver(() => resizeCanvas())
+    ro.observe(document.body)
     rafId = requestAnimationFrame(draw)
   })
 
   onBeforeUnmount(() => {
     window.removeEventListener('resize', resizeCanvas)
     window.removeEventListener('mousemove', onPointerMove)
+    if (ro) ro.disconnect()
     if (rafId) cancelAnimationFrame(rafId)
   })
 </script>
 
 <style scoped>
   .dots-canvas {
-    position: fixed;
-    inset: 0;
+    position: absolute;
+    left: 0;
+    top: 0;
     z-index: 0;
     display: block;
     width: 100vw;
-    height: 100vh;
+    height: 200vh; /* plus long pour tester le scroll du fond */
     pointer-events: none;
   }
 </style>
