@@ -1,4 +1,3 @@
-
 <template>
   <v-app>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -7,7 +6,7 @@
     <div class="controls">
       <button
         aria-label="Toggle day/night theme"
-        :aria-pressed="isLight.toString()"
+        :aria-pressed="isLight"
         class="theme-toggle"
         title="Toggle day/night theme"
         @click="toggleTheme"
@@ -16,7 +15,7 @@
       </button>
       <button
         aria-label="Enable voice synthesis"
-        :aria-pressed="voiceEnabled.toString()"
+        :aria-pressed="voiceEnabled"
         class="voice-toggle"
         title="Enable voice synthesis"
         @click="toggleVoice"
