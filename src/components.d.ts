@@ -10,7 +10,6 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./components/AppFooter.vue')['default']
     CursorManager: typeof import('./components/CursorManager.vue')['default']
-    CustomCursor: typeof import('./components/CustomCursor.vue')['default']
     DottedParallax: typeof import('./components/DottedParallax.vue')['default']
     HelloWorld: typeof import('./components/HelloWorld.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
