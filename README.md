@@ -175,7 +175,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - LinkedIn: [Victor Chabeau](https://www.linkedin.com/in/victor-chabeau-b5ab91232/)
 - GitHub: [@victorrchb](https://github.com/victorrchb)
 - Location: Paris, France
-
----
-
-*Built with ❤️ using Vue.js 3, Vuetify 3, and modern web technologies*
