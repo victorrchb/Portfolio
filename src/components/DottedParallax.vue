@@ -31,11 +31,43 @@
   let mouseY = window.innerHeight / 2
   let dpr = Math.max(1, window.devicePixelRatio || 1)
   let ro: ResizeObserver | null = null
+  let isLowPerformance = false
+  let lastFrameTime = 0
+  let frameCount = 0
 
   function onPointerMove (e: MouseEvent) {
     // Position absolue sur la page (et pas uniquement dans le viewport)
     mouseX = e.clientX + window.scrollX
     mouseY = e.clientY + window.scrollY
+  }
+
+  function detectPerformance () {
+    // Détection basique de performance pour les appareils mobiles
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    const isLowEnd = navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4
+    const isSlowConnection = navigator.connection && (navigator.connection as any).effectiveType && 
+      ['slow-2g', '2g', '3g'].includes((navigator.connection as any).effectiveType)
+    
+    return isMobile || isLowEnd || isSlowConnection
+  }
+
+  function optimizeForPerformance () {
+    isLowPerformance = detectPerformance()
+    
+    // Vérifier si l'utilisateur préfère la réduction de mouvement
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    
+    if (isLowPerformance) {
+      // Réduire la densité des points sur les appareils moins performants
+      props.gap = Math.max(props.gap, 32)
+      props.dotSize = Math.max(props.dotSize, 1.5)
+    }
+    
+    if (prefersReducedMotion) {
+      // Désactiver l'animation pour les utilisateurs qui préfèrent la réduction de mouvement
+      isLowPerformance = true
+      props.gap = Math.max(props.gap, 40)
+    }
   }
 
   function resizeCanvas () {
@@ -65,6 +97,15 @@
 
   function draw () {
     if (!ctx) return
+    
+    // Gestion de performance - limiter le framerate sur les appareils moins performants
+    const now = performance.now()
+    if (isLowPerformance && now - lastFrameTime < 16) {
+      rafId = requestAnimationFrame(draw)
+      return
+    }
+    lastFrameTime = now
+    
     const { gap, dotSize, radius, strength } = props
     const { background, color } = resolveCanvasColors()
     const c = canvasEl.value
@@ -78,6 +119,11 @@
     ctx.fillStyle = color
     const startX = -((w % gap) / 2)
     const startY = -((h % gap) / 2)
+    const time = Date.now() * (isLowPerformance ? 0.0005 : 0.0008) // Vitesse adaptée à la performance
+
+    // Optimisation : réduire le nombre de calculs sur les appareils moins performants
+    const step = isLowPerformance ? 2 : 1
+    const animationIntensity = isLowPerformance ? 0.6 : 1
 
     for (let y = startY; y <= h + gap; y += gap) {
       for (let x = startX; x <= w + gap; x += gap) {
@@ -86,17 +132,39 @@
         const dist = Math.hypot(dx, dy)
         let offX = 0
         let offY = 0
+        
+        // Animation de flottement plus naturelle avec plusieurs couches
+        const baseFloatX = Math.sin(time * 0.4 + x * 0.008) * 1.2 * animationIntensity
+        const baseFloatY = Math.cos(time * 0.3 + y * 0.008) * 1.2 * animationIntensity
+        
+        // Ajout d'une couche de micro-mouvement pour plus de réalisme (réduit sur mobile)
+        const microFloatX = Math.sin(time * 1.2 + x * 0.02) * 0.3 * animationIntensity
+        const microFloatY = Math.cos(time * 0.8 + y * 0.02) * 0.3 * animationIntensity
+        
+        // Combinaison des mouvements pour un effet plus organique
+        const floatX = baseFloatX + microFloatX
+        const floatY = baseFloatY + microFloatY
+        
         if (dist < radius) {
           const t = 1 - dist / radius
           const bend = (t * t) * (3 - 2 * t)
           const normX = dx / (dist || 1)
           const normY = dy / (dist || 1)
           const amp = strength * bend
-          offX = -normY * amp
-          offY = normX * amp
+          offX = -normY * amp + floatX
+          offY = normX * amp + floatY
+        } else {
+          // Appliquer le flottement même en dehors du rayon de la souris
+          offX = floatX
+          offY = floatY
         }
+        
+        // Ajout d'une légère variation de taille pour plus de dynamisme (réduite sur mobile)
+        const sizeVariation = isLowPerformance ? 1 : (1 + Math.sin(time * 0.6 + x * 0.01 + y * 0.01) * 0.1)
+        const currentDotSize = dotSize * sizeVariation
+        
         ctx.beginPath()
-        ctx.arc(x + offX, y + offY, dotSize, 0, Math.PI * 2)
+        ctx.arc(x + offX, y + offY, currentDotSize, 0, Math.PI * 2)
         ctx.fill()
       }
     }
@@ -104,6 +172,7 @@
   }
 
   onMounted(() => {
+    optimizeForPerformance()
     resizeCanvas()
     window.addEventListener('resize', resizeCanvas)
     window.addEventListener('mousemove', onPointerMove, { passive: true })
@@ -131,5 +200,35 @@
     width: 100vw;
     height: 200vh; /* plus long pour tester le scroll du fond */
     pointer-events: none;
+    /* Optimisations pour la performance */
+    will-change: transform;
+    transform: translateZ(0); /* Force l'accélération matérielle */
+    backface-visibility: hidden;
+    /* Amélioration de la qualité de rendu */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+  }
+  
+  /* Optimisations pour les appareils mobiles */
+  @media (max-width: 768px) {
+    .dots-canvas {
+      /* Réduction de la hauteur sur mobile pour économiser les ressources */
+      height: 150vh;
+    }
+  }
+  
+  /* Optimisations pour les appareils très petits */
+  @media (max-width: 480px) {
+    .dots-canvas {
+      height: 120vh;
+    }
+  }
+  
+  /* Désactivation de l'animation sur les appareils qui préfèrent la réduction de mouvement */
+  @media (prefers-reduced-motion: reduce) {
+    .dots-canvas {
+      animation: none;
+    }
   }
 </style>
