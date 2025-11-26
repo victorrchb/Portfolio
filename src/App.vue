@@ -27,11 +27,11 @@
       <section class="section hero">
         <div class="container">
           <h1 id="site-title" class="title reveal" data-speed="0">Victor Chabeau</h1>
-          <p class="subtitle reveal parallax" data-speed="0.25">Creative Front-End Developer</p>
+          <p class="subtitle reveal parallax" data-speed="0.25">Full-Stack Developer</p>
           <p class="lead reveal parallax" data-speed="0.15">
-            Web Development student at HETIC (2022 – 2026),<br>
-            passionate about front-end development, UI/UX design.<br>
-            I design fast, accessible and elegant interfaces with meticulous micro-interactions.
+            Full-stack engineering student at HETIC (2022 – 2026),<br>
+            shipping resilient APIs, scalable architectures, and immersive UIs.<br>
+            I orchestrate data, infrastructure, and refined interactions to deliver cohesive products.
           </p>
         </div>
       </section>
